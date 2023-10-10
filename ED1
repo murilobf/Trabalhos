@@ -1,0 +1,919 @@
+#include <iostream>
+#include <stdlib.h>
+#include <fstream>
+#include <string>
+#include <time.h>
+
+using namespace std;
+
+struct Noh_encad
+{
+    string nome;
+    string rg;
+
+    Noh_encad *prox;
+};
+
+struct Noh_simples
+{
+    string nome;
+    int rg;
+};
+
+int tamanho_enc(Noh_simples *l_simples)
+{
+    int tamanho=0;
+    for(int i=0; l_simples[i].rg!=0; i++)
+        tamanho++;
+    return tamanho;
+}
+
+void constroi_filas(Noh_encad *cabeca,Noh_simples *l_simples, string caminho)
+{
+    ///Vai seguindo a lista e deletando qualquer nó que estiver alocado pra dar lugar a nova lista
+    if(cabeca->prox != NULL)
+    {
+        Noh_encad *temp = cabeca->prox;
+        Noh_encad *temp_anterior;
+        while(temp != NULL)
+        {
+            temp_anterior = temp;
+            temp = temp->prox;
+            delete temp_anterior;
+        }
+    }
+
+    for(int i=0;i<12000000;i++)
+    {
+        l_simples[i].nome="";
+        l_simples[i].rg=0;
+    }
+
+
+    cabeca->prox = NULL;
+
+    int vazia = 1;
+    string line;
+    Noh_encad *anterior;
+
+    ifstream myfile (caminho);
+    if (myfile.is_open())
+    {
+        for(int i=0; getline(myfile,line);i++)
+        {
+            if(vazia)
+            {
+                l_simples[i].nome = line.substr(0, line.find(","));
+                l_simples[i].rg = stoi(line.substr(line.find(",")+ 1));
+
+                cabeca->nome = line.substr(0, line.find(","));
+                cabeca->rg = line.substr(line.find(",")+ 1);
+                anterior = cabeca;
+                vazia = 0;
+            }
+            else
+            {
+                ///Aloca memória para esse novo nó requisitado
+                Noh_encad * novo_Noh_encad = new Noh_encad;
+
+                ///Faz o campo "Próximo" do nó anterior apontar para o nó aqui criado
+                anterior->prox = novo_Noh_encad;
+
+                ///Preenche o nó com os dados requisitados
+                novo_Noh_encad->nome = line.substr(0, line.find(","));
+                novo_Noh_encad->rg = line.substr(line.find(",")+ 1);
+
+                novo_Noh_encad->prox = NULL;
+
+                ///Modifica o auxiliar "anterior" para modificar o campo "próximo" nele
+                anterior = novo_Noh_encad;
+
+                ///Adiciona os dados da linha do .txt ao vetor na posição i
+                l_simples[i].nome = line.substr(0, line.find(","));
+                l_simples[i].rg = stoi(line.substr(line.find(",")+ 1));
+            }
+
+        }
+        myfile.close();
+    }
+    else cout << "Unable to open file";
+}
+
+void inserir_inicio(Noh_encad **cabeca, Noh_simples *noh_simples)
+{
+    double t_enc,t_sim;
+    clock_t t;
+    int mov_enc=0,comp_enc=0;
+    int mov_sim=0,comp_sim=0;
+    string nome,rg;
+    Noh_encad *novo_noh_encad = new Noh_encad;
+
+    cout << "Insira o nome ";
+    cin >> nome;
+    cout << "Insira o RG ";
+    cin >> rg;
+
+    t = clock();
+    novo_noh_encad->nome = nome;
+    novo_noh_encad->rg = rg;
+    novo_noh_encad->prox = *cabeca;
+    mov_enc += 3;
+
+    ///Faz o campo próximo em cabeça apontar para a antiga cabeça, o que efetivamente torna essa antiga a segunda na lista
+    *cabeca = novo_noh_encad;
+    mov_enc ++;
+    t = clock()-t;
+
+    t_enc = ((double)t)/CLOCKS_PER_SEC;
+
+    t = clock();
+    for(int i = 11999998; i >= 0; i--)
+    {
+        mov_sim++;
+        noh_simples[i+1] = noh_simples[i];
+    }
+
+    noh_simples[0].nome = nome;
+    noh_simples[0].rg = stoi(rg);
+    mov_sim += 2;
+    t = clock()-t;
+
+    t_sim = ((double)t)/CLOCKS_PER_SEC;
+
+    printf("Lista encadeada:\nC(n) = %d       M(n) = %d       T = %f\n",comp_enc,mov_enc,t_enc);
+    printf("Lista simples:\nC(n) = %d       M(n) = %d       T = %f\n",comp_sim,mov_sim,t_sim);
+
+}
+
+void inserir_meio(Noh_encad *cabeca, Noh_simples *noh_simples)
+{
+    double t_enc,t_sim;
+    clock_t t;
+    int mov_enc=0,comp_enc=0;
+    int mov_sim=0,comp_sim=0;
+    int num,contador=1;
+    string nome,rg;
+
+    cout << "\n\nInsira a posicao desejada ";
+    cin >> num;
+
+    if(num <= 1)
+    {
+        cout << "\nTalvez queira usar a funcao de inserir no inicio";
+        return;
+    }
+    cout << "Insira o nome ";
+    cin >> nome;
+    cout << "Insira o RG ";
+    cin >> rg;
+
+    Noh_encad *anterior,*noh_atual = cabeca;
+    t = clock();
+    ///Percorre a lista até chegar na posição desejada
+    while(contador != num)
+    {
+        anterior = noh_atual;
+        noh_atual = noh_atual->prox;
+        contador++;
+        mov_enc += 2;
+    }
+
+    ///Aloca memória para o novo nó
+    Noh_encad *novo_noh_encad = new Noh_encad;
+
+    novo_noh_encad->nome = nome;
+    novo_noh_encad->rg = rg;
+    mov_enc += 2;
+
+    ///Faz o nó anterior apontar para esse novo nó
+    anterior->prox = novo_noh_encad;
+    ///Faz esse novo nó apontar para o nó que antes ocupava sua posição
+    novo_noh_encad->prox = noh_atual;
+
+    t = clock()-t;
+    t_enc = ((double)t)/CLOCKS_PER_SEC;
+
+    t = clock();
+    for(int i=11999998; i>num; i--)
+    {
+        noh_simples[i+1] = noh_simples[i];
+        mov_sim++;
+    }
+    noh_simples[num-1].nome = nome;
+    noh_simples[num-1].rg = stoi(rg);
+
+    t = clock()-t;
+
+    t_sim = ((double)t)/CLOCKS_PER_SEC;
+    printf("Lista encadeada:\nC(n) = %d       M(n) = %d       T = %f\n",comp_enc,mov_enc,t_enc);
+    printf("Lista simples:\nC(n) = %d       M(n) = %d       T = %f\n",comp_sim,mov_sim,t_sim);
+}
+
+void inserir_fim(Noh_encad *cabeca,Noh_simples *noh_simples)
+{
+    double t_enc,t_sim;
+    clock_t t;
+    int mov_enc=0,comp_enc=0;
+    int mov_sim=0,comp_sim=0;
+    string nome,rg;
+    Noh_encad *noh_atual = cabeca;
+    Noh_encad *anterior;
+
+    ///Lê as informações requisitadas
+    cout << "Insira o nome ";
+    cin >> nome;
+    cout << "Insira o RG ";
+    cin >> rg;
+
+    t = clock();
+
+    ///Percorre a lista encadeada até o fim
+    while(noh_atual != NULL)
+    {
+        anterior = noh_atual;
+        noh_atual = noh_atual->prox;
+        mov_enc += 2;
+    }
+
+    ///Aloca espaço para o novo nó
+    Noh_encad *novo_noh_encad = new Noh_encad;
+
+    ///Faz o nó da lista encadeada receber as informações
+    novo_noh_encad->nome = nome;
+    novo_noh_encad->rg = rg;
+
+    novo_noh_encad->prox = NULL;
+
+    ///Faz o nó anterior apontar para o novo nó, o que o torna o último na lista
+    anterior->prox = novo_noh_encad;
+    t = clock()-t;
+    t_enc = ((double)t)/CLOCKS_PER_SEC;
+
+    t = clock();
+    for(int i=0; noh_simples[i].nome != "";i++)
+    {
+        if(noh_simples[i+1].nome == "")
+        {
+            noh_simples[i+1].nome = nome;
+            noh_simples[i+1].rg = stoi(rg);
+            mov_sim += 2;
+            break;
+        }
+        comp_sim++;
+    }
+    t = clock()-t;
+    t_sim = ((double)t)/CLOCKS_PER_SEC;
+
+    printf("Lista encadeada:\nC(n) = %d       M(n) = %d       T = %f\n",comp_enc,mov_enc,t_enc);
+    printf("Lista simples:\nC(n) = %d       M(n) = %d       T = %f\n",comp_sim,mov_sim,t_sim);
+}
+
+void remover_inicio(Noh_encad **cabeca, Noh_simples *noh_simples)
+{
+    double t_enc,t_sim;
+    clock_t t;
+    int mov_enc=0,comp_enc=0;
+    int mov_sim=0,comp_sim=0;
+
+    t = clock();
+    ///O ponteiro de cabeça é recebido pelo ponteiro de "temp"
+    Noh_encad **temp = cabeca;
+
+    ///Faz o ponteiro de "cabeça" apontar para o campo próximo dele mesmo e então deleta o conteúdo apontado por "temp"
+    if((**cabeca).prox != NULL)
+        **cabeca = *(*cabeca)->prox;
+    ///Deixa todos os campos da cabeça vazios
+    else
+    {
+        (**cabeca).nome = "";
+        (**cabeca).rg = "";
+        (**cabeca).prox = NULL;
+    }
+    t = clock()-t;
+    t_enc = ((double)t)/CLOCKS_PER_SEC;
+
+    comp_enc++;
+    mov_enc++;
+
+    t = clock();
+    for(int i=0;i < 11999998;i++)
+    {
+        noh_simples[i] = noh_simples[i+1];
+        mov_sim++;
+    }
+    t = clock()-t;
+    t_sim = ((double)t)/CLOCKS_PER_SEC;
+
+    printf("Lista encadeada:\nC(n) = %d       M(n) = %d       T = %f\n",comp_enc,mov_enc,t_enc);
+    printf("Lista simples:\nC(n) = %d       M(n) = %d       T = %f\n",comp_sim,mov_sim,t_sim);
+
+}
+
+void remover_meio(Noh_encad *cabeca,Noh_simples *noh_simples)
+{
+    double t_enc,t_sim;
+    clock_t t;
+    int mov_enc=0,comp_enc=0;
+    int mov_sim=0,comp_sim=0;
+    int num,contador=1;
+    Noh_encad *anterior,*noh_atual;
+
+    cout << "\nInsira a posicao desejada: ";
+    cin >> num;
+
+    t = clock();
+    noh_atual=cabeca;
+
+    ///Percorre a lista até chegar na posição desejada OU chegar ao final da lista
+    while(contador != num && noh_atual->prox != NULL)
+    {
+        anterior = noh_atual;
+        noh_atual = noh_atual->prox;
+        contador++;
+        mov_enc += 2;
+    }
+
+    ///Faz o campo próximo do nó anterior apontar para o nó posterior ao nó que se quer deletado e então o deleta
+    anterior->prox=noh_atual->prox;
+    delete noh_atual;
+
+    t = clock()-t;
+    t_enc = ((double)t)/CLOCKS_PER_SEC;
+
+    t = clock();
+    ///Sobrescreve o campo do número requisitado com o campo a sua direita, e faz o mesmo até o final da lista para movê-los à posição correta
+    for(int i=num-1; i < 11999998 && noh_simples[i].nome != ""; i++)
+    {
+        noh_simples[i].nome=noh_simples[i+1].nome;
+        noh_simples[i].rg=noh_simples[i+1].rg;
+        mov_sim  += 2;
+    }
+    t = clock()-t;
+
+    printf("Lista encadeada:\nC(n) = %d       M(n) = %d       T = %f\n",comp_enc,mov_enc,t_enc);
+    printf("Lista simples:\nC(n) = %d       M(n) = %d       T = %f\n",comp_sim,mov_sim,t_sim);
+}
+
+void remover_fim(Noh_encad *cabeca,Noh_simples *noh_simples)
+{
+    double t_enc,t_sim;
+    clock_t t;
+    int mov_enc=0,comp_enc=0;
+    int mov_sim=0,comp_sim=0;
+    int apagado = 0;
+    Noh_encad *noh_atual,*anterior;
+
+    t = clock();
+
+    noh_atual = cabeca;
+    if(noh_atual->prox == NULL)
+    {
+        noh_atual->nome = "";
+        noh_atual->rg = "";
+    }
+    else
+    {
+        ///Percorre até o final da lista
+        while(noh_atual->prox != NULL)
+        {
+            anterior = noh_atual;
+            noh_atual = noh_atual->prox;
+            mov_enc += 2;
+        }
+
+        ///Faz o penúltimo nó deixar de apontar para alguém e deleta o último, fazendo com que o penúltimo se torne o último
+        anterior->prox = NULL;
+        delete noh_atual;
+    }
+    comp_enc++;
+
+    t = clock()-t;
+    t_enc = ((double)t)/CLOCKS_PER_SEC;
+
+    t = clock();
+
+    ///Percorre até o último item da lista
+    for(int i=0;i < 11999998 && !apagado;i++)
+    {
+        ///Verifica se o campo atual não está vazio e se o próximo campo está vazio, o que indica que o atual é o último da lista
+        if(noh_simples[i].nome != "" && noh_simples[i+1].nome == "")
+        {
+            ///Apaga todos os dados do campo
+            noh_simples[i].nome = "";
+            noh_simples[i].rg = 99999999;
+            ///Positiva a flag para parar o loop
+            apagado = 1;
+            mov_enc +=2;
+        }
+        comp_sim ++;
+    }
+    t = clock()-t;
+    t_sim = ((double)t)/CLOCKS_PER_SEC;
+
+
+    printf("Lista encadeada:\nC(n) = %d       M(n) = %d       T = %f\n",comp_enc,mov_enc,t_enc);
+    printf("Lista simples:\nC(n) = %d       M(n) = %d       T = %f\n",comp_sim,mov_sim,t_sim);
+
+}
+
+void procura_nome(Noh_encad *cabeca,Noh_simples *noh_simples)
+{
+
+    double t_enc,t_sim;
+    clock_t t;
+    int mov_enc=0,comp_enc=0;
+    int mov_sim=0,comp_sim=0;
+    int encontrado = 0, pos_encontr;
+    Noh_encad *noh_atual = cabeca;
+    string rg;
+
+    cout << "Insira o RG que deseja procurar ";
+    cin >> rg;
+
+    t = clock();
+
+    ///Percorre a lista até localizar o rg ou até chegar ao final
+    while(noh_atual->prox != NULL && (noh_atual->rg != rg))
+    {
+        noh_atual = noh_atual->prox;
+        mov_enc++;
+    }
+
+    cout << "Lista encadeada: \n";
+
+    ///Se o rg estiver na lista imprime ele
+    if(noh_atual->rg == rg)
+        cout << "Portador do RG: "+noh_atual->nome+"\n";
+
+    else
+        cout << "Nao foi possivel localizar o RG \n";
+
+    comp_enc++;
+    t = clock()-t;
+    t_enc = ((double)t)/CLOCKS_PER_SEC;
+
+    t = clock();
+    ///Percorre a lista até chegar ao fim ou até encontrar o rg
+    cout << "Lista simples: \n";
+    for(int i=0;i < 11999998 && !encontrado;i++)
+    {
+        if(noh_simples[i].rg == stoi(rg))
+        {
+            ///Flag usada para condição no loop recebe o valor de positivo para indicar que achou
+            encontrado = 1;
+
+            ///Salva a posição em que ele foi encontrado para imprimir posteriormente
+            pos_encontr = i;
+            mov_sim++;
+        }
+        comp_sim++;
+    }
+    if(encontrado)
+        cout << "Portador do RG: "+noh_simples[pos_encontr].nome+"\n";
+    else
+        cout << "Nao foi possivel localizar o RG \n";
+    comp_sim++;
+
+    t = clock()-t;
+    t_sim = ((double)t)/CLOCKS_PER_SEC;
+
+    printf("Lista encadeada:\nC(n) = %d       M(n) = %d       T = %f\n",comp_enc,mov_enc,t_enc);
+    printf("Lista simples:\nC(n) = %d       M(n) = %d       T = %f\n",comp_sim,mov_sim,t_sim);
+}
+
+void imprimir_lista(Noh_encad **cabeca,Noh_simples *lista)
+{
+    double t_enc,t_sim;
+    clock_t t;
+    int mov_enc=0,comp_enc=0;
+    int mov_sim=0,comp_sim=0;
+    Noh_encad *temp = *cabeca;
+
+    t = clock();
+    cout << "Lista simples: \n";
+    cout << "\n========================================\n";
+    for(int i=0;lista[i].nome != "" && lista[i].rg !=0;i++)
+    {
+        cout << lista[i].nome + " "+to_string(lista[i].rg) + "\n";
+    }
+    cout << "========================================\n";
+
+    t = clock()-t;
+    t_sim = ((double)t)/CLOCKS_PER_SEC;
+    cout << "Lista encadeada: \n";
+    cout << "\n========================================\n";
+
+    t = clock();
+    ///Percorre a lista até achar um elemento nulo (vazio) que indica o fim dela e vai imprimindo cada elemento
+    while(temp != NULL)
+    {
+        cout << temp->nome + " " + temp->rg + "\n";
+        temp = temp->prox;
+        mov_enc++;
+    }
+    cout << "========================================\n";
+    t = clock()-t;
+    t_enc = ((double)t)/CLOCKS_PER_SEC;
+
+    printf("Lista encadeada:\nC(n) = %d       M(n) = %d       T = %f\n",comp_enc,mov_enc,t_enc);
+    printf("Lista simples:\nC(n) = %d       M(n) = %d       T = %f\n",comp_sim,mov_sim,t_sim);
+}
+
+void imprimir_sequencial(Noh_simples *lista)
+{
+    for(int i=0;lista[i].nome != "" && lista[i].rg !=0;i++)
+    {
+        cout << lista[i].nome + " "+to_string(lista[i].rg) + "\n";
+    }
+    cout << "\n";
+}
+void salvar_lista(Noh_encad *cabeca, Noh_simples *noh_simples)
+{
+    int escolha;
+    Noh_encad *noh_atual = cabeca;
+
+    cout << "1 para salvar sequencial\n";
+    cout << "2 para encadeada\n";
+    cin >> escolha;
+
+    if(escolha == 1)
+    {
+        ofstream myfile ("C:\\Users\\muril\\Desktop\\Codeblocks\\ED1\\sequencial.txt");
+        if(myfile.is_open())
+        {
+            for(int i=0;noh_simples[i].nome != "" && noh_simples[i].rg!=0;i++)
+                myfile << noh_simples[i].nome + " " + to_string(noh_simples[i].rg) + "\n";
+            myfile.close();
+        }
+        else cout << "Unable to open file";
+    }
+
+    else if(escolha == 2)
+    {
+        ofstream myfile ("C:\\Users\\muril\\Desktop\\Codeblocks\\ED1\\encadeada.txt");
+        if (myfile.is_open())
+        {
+            while(noh_atual != NULL)
+            {
+                myfile << noh_atual->nome + " " + noh_atual->rg + "\n";
+                noh_atual = noh_atual->prox;
+            }
+          myfile.close();
+        }
+        else cout << "Unable to open file";
+    }
+    else
+        cout << "Escolha invalida\n";
+}
+
+void selection_sort(Noh_simples *noh_simples)
+{
+    int menor;
+    int pos;
+
+    for(int i=0;i<11999998 && noh_simples[i].rg != 0;i++)
+    {
+        menor = 99999999;
+        for(int j=i; j<1199988&&noh_simples[j].rg!=0;j++)
+        {
+            if(noh_simples[j].rg < menor)
+            {
+                pos = j;
+                menor = noh_simples[j].rg;
+            }
+        }
+        Noh_simples temp = noh_simples[i];
+        noh_simples[i] = noh_simples[pos];
+        noh_simples[pos] = temp;
+    }
+}
+
+void insertion_sort(Noh_simples *noh_simples)
+{
+    for(int i=1;i<11999998 && noh_simples[i].rg != 0;i++)
+    {
+        /// O Número e sua posição serão guardados para fins de comparação no loop a seguir
+        int j = i-1;
+        Noh_simples aux = noh_simples[i];
+
+        /// Vê até qual posição (caso seja) o rg do campo atual é menor
+        while(aux.rg < noh_simples[j].rg && j >= 0)
+        {
+            /// Move os números para a direita pra inserir o número (caso seja menor)
+            noh_simples[j+1] = noh_simples[j];
+            j--;
+        }
+        /// Atribui o valor correto pro campo
+        noh_simples[j+1] = aux;
+    }
+}
+
+void bubble_sort(Noh_simples *noh_simples)
+{
+    int ordenado = 0;
+    Noh_simples aux;
+
+    ///Refaz o processo enquanto a lista não estiver ordenada
+    while(!ordenado)
+    {
+        ordenado = 1;
+        for(int i=0;i<11999998 && noh_simples[i].rg != 0;i++)
+        {
+
+            ///Compara campos vizinhos, e caso não estejam localmente ordenados, troca-os de lugar e reseta a flag ordenado pra 0
+
+        }
+    }
+}
+
+void shell_sort(Noh_simples *noh_simples, int tamanho)
+{
+    ///O H é usado pra subdividir
+    for(int h=tamanho/2; h > 0; h /= 2)
+    {
+        for(int i=h;i<tamanho;i++)
+        {
+            Noh_simples aux = noh_simples[i];
+            int j=i;
+
+            ///Move pra direita enquanto tiver nós menores que ele
+            for(j=i;j >= h && noh_simples[j-h].rg > aux.rg; j-=h)
+            {
+                noh_simples[j] = noh_simples[j-h];
+            }
+            noh_simples[j] = aux;
+        }
+    }
+}
+
+void quick_sort(Noh_simples *noh_simples)
+{
+
+}
+
+void merg(Noh_simples *noh_simples,int comeco,int meio, int ultimo)
+{
+    ///Aloca espaço para os vetores
+    int tam_esq = meio-comeco;
+    int tam_dir = ultimo-meio;
+
+    Noh_simples *esquerdo = new Noh_simples[tam_esq];
+    Noh_simples *direito = new Noh_simples[tam_dir];
+
+    ///Preenche os vetores equivalentes ao lado esquerdo e direito requisitados
+    for(int i=0; i<tam_esq;i++)
+    {
+        esquerdo[i] = noh_simples[comeco+i];
+    }
+    for(int j=0; j<tam_dir;j++)
+    {
+        direito[j] = noh_simples[meio+j];
+    }
+
+    ///Ordena o vetor original a partir dos vetores auxiliares
+
+    int i=0,j=0,k=comeco;
+
+    while(i < tam_esq && j < tam_dir)
+    {
+        if(esquerdo[i].rg <= direito[j].rg)
+        {
+            noh_simples[k] = esquerdo[i];
+            i++;
+
+        }
+        else
+        {
+            noh_simples[k] = direito[j];
+            j++;
+        }
+        k++;
+    }
+
+    ///Insere os elementos restantes (caso tenha) dos vetores esquerdo ou direito no vetor principal
+
+    while(i < tam_esq)
+    {
+        noh_simples[k] = esquerdo[i];
+        i++;
+        k++;
+    }
+
+    while(j < tam_dir)
+    {
+        noh_simples[k] = direito[j];
+        j++;
+        k++;
+    }
+
+    delete[] esquerdo;
+    delete[] direito;
+}
+
+void merge_sort(Noh_simples *noh_simples,int comeco,int tamanho)
+{
+    ///Precisa-se desse verificação pra chamar recursivamente;
+    if(comeco < tamanho)
+    {
+        ///É necessário salvar as posições do meio pra saber em que ponto dividir
+        int meio = comeco+(tamanho-comeco)/2;
+
+        ///Chama as funções de novo pra cada subparte do vetor, até que cada uma fique com tamanho 1
+        merge_sort(noh_simples,comeco,meio);
+        merge_sort(noh_simples,(meio+1),tamanho);
+
+        merg(noh_simples,comeco,meio,tamanho);
+    }
+
+    imprimir_sequencial(noh_simples);
+    cout <<"\n\n";
+}
+
+void busca_binaria(Noh_simples *noh_simples,int tamanho)
+{
+    int comeco = 0;
+    int ultimo = tamanho-1;
+    int meio;
+    int rg;
+
+    cout << "\nInsira o RG que deseja procurar ";
+    cin >> rg;
+
+    while(comeco <= ultimo)
+    {
+        meio = (comeco+ultimo)/2;
+        if(noh_simples[meio].rg == rg)
+        {
+            cout << "\nDono do rg: " + noh_simples[meio].nome;
+            cout << "\nPosicao do rg: " + to_string(meio+1) + "\n";
+            return;
+        }
+
+        else if(noh_simples[meio].rg < rg)
+        {
+            comeco = meio+1;
+        }
+
+        else if(noh_simples[meio].rg > rg)
+        {
+            ultimo = meio-1;
+        }
+        cout << to_string(meio);    }
+    cout << "\nRG NAO ENCONTRADO.";
+}
+
+void ordena(Noh_simples *lista,int tamanho)
+{
+    int escolha_ord = 0;
+
+    cout << "Escolha qual tipo de ordenação usar:\n";
+    cout << "1 para Selection-sort\n";
+    cout << "2 para Insertion-sort\n";
+    cout << "3 para Bubble-sort\n";
+    cout << "4 para Shell-sort\n";
+    cout << "5 para Quick-sort\n";
+    cout << "6 para Merge-sort\n";
+
+    cin >> escolha_ord;
+
+    if(escolha_ord == 1)
+        selection_sort(lista);
+    else if(escolha_ord == 2)
+        insertion_sort(lista);
+    else if(escolha_ord == 3)
+        bubble_sort(lista);
+    else if(escolha_ord == 4)
+        shell_sort(lista,tamanho);
+    //else if(escolha_ord == 5)
+    else if(escolha_ord == 6)
+        merge_sort(lista,0,tamanho);
+}
+
+string caminho()
+{
+    string caminho;
+    int arquivo;
+
+    cout << "Escolha qual arquivo usar\n";
+    cout << "1 = 10\n";
+    cout << "2 = 50\n";
+    cout << "3 = 100\n";
+    cout << "4 = 1K\n";
+    cout << "5 = 10K\n";
+    cout << "6 = 1M\n";
+    cout << "7 = 10M\n";
+    cin >> arquivo;
+
+    if(arquivo == 1)
+        caminho = "C:\\Users\\muril\\Desktop\\Codeblocks\\ED1\\Nomes\\NomeRG10.txt";
+
+    else if(arquivo == 2)
+        caminho = "C:\\Users\\muril\\Desktop\\Codeblocks\\ED1\\Nomes\\NomeRG50.txt";
+
+    else if(arquivo == 3)
+        caminho = "C:\\Users\\muril\\Desktop\\Codeblocks\\ED1\\Nomes\\NomeRG100.txt";
+
+    else if(arquivo == 4)
+        caminho = "C:\\Users\\muril\\Desktop\\Codeblocks\\ED1\\Nomes\\NomeRG1K.txt";
+
+    else if(arquivo == 5)
+        caminho = "C:\\Users\\muril\\Desktop\\Codeblocks\\ED1\\Nomes\\NomeRG10K.txt";
+
+    else if(arquivo == 6)
+        caminho = "C:\\Users\\muril\\Desktop\\Codeblocks\\ED1\\Nomes\\NomeRG1M.txt";
+
+    else if(arquivo == 7)
+        caminho = "C:\\Users\\muril\\Desktop\\Codeblocks\\ED1\\Nomes\\NomeRG100M.txt";
+
+    else cout << "Caminho invalido";
+
+    return caminho;
+}
+
+int main()
+{
+    int tamanho;
+    int escolha = 0,arquivo;
+    string caminh;
+    Noh_encad cabeca;
+    Noh_encad *ptr_cabeca = &cabeca;
+    Noh_simples *l_simples = new Noh_simples[12000000];
+
+    caminh = caminho();
+    cabeca.prox = NULL;
+
+    constroi_filas(ptr_cabeca,l_simples,caminh);
+    tamanho = tamanho_enc(l_simples);
+    cout << tamanho;
+
+    while(escolha != 12)
+    {
+        cout << "----------------------------------------\n";
+        cout << "Insira o numero para a funcao desejada\n";
+        cout << "1 Insere um no no inicio da lista\n";
+        cout << "2 Insere um no fim da lista\n";
+        cout << "3 Insere um no na posicao N da lista\n";
+        cout << "4 Retira um no no inicio da lista\n";
+        cout << "5 Retira um no no fim da lista\n";
+        cout << "6 Retira um no na posicao N da lista\n";
+        cout << "7 Procura um nome atraves do RG\n";
+        cout << "8 Mostra a lista na tela\n";
+        cout << "9 Salva a lista em um arquivo\n";
+        cout << "10 Le a lista de um arquivo\n";
+        cout << "11 Ordena a lista\n";
+        cout << "12 Sai do programa\n";
+        cout << "----------------------------------------\n";
+
+        cin >> escolha;
+
+        if(escolha == 1)
+        {
+            inserir_inicio(&ptr_cabeca,l_simples);
+        }
+        else if(escolha == 2)
+        {
+            inserir_fim(ptr_cabeca,l_simples);
+        }
+        else if(escolha == 3)
+        {
+            inserir_meio(ptr_cabeca,l_simples);
+        }
+        else if(escolha == 4)
+        {
+            remover_inicio(&ptr_cabeca,l_simples);
+        }
+        else if(escolha == 5)
+        {
+            remover_fim(ptr_cabeca,l_simples);
+        }
+        else if(escolha == 6)
+        {
+            remover_meio(ptr_cabeca,l_simples);
+        }
+        else if(escolha == 7)
+        {
+            //procura_nome(ptr_cabeca, l_simples);
+            busca_binaria(l_simples,tamanho);
+        }
+        else if(escolha == 8)
+        {
+            imprimir_lista(&ptr_cabeca,l_simples);
+        }
+        else if(escolha == 9)
+        {
+            salvar_lista(ptr_cabeca,l_simples);
+
+        }
+        else if(escolha == 10)
+        {
+            caminh = caminho();
+            constroi_filas(ptr_cabeca,l_simples,caminh);
+        }
+        else if(escolha == 11)
+        {
+            ordena(l_simples,tamanho);
+        }
+        tamanho = tamanho_enc(l_simples);
+        //cout << tamanho;
+    }
+}
